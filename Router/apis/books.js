@@ -13,7 +13,8 @@ router.get('/',(req,res,next) =>{
                N_Books:books.length,
                Books:books.map(book =>{
                    return{
-                    Title:book.TITLE,                   
+                    Title:book.TITLE, 
+                    Status:book.STATUS,                 
                     MoreInfos:'http://localhost:8080/books/'+book._id
                        
                    }
@@ -24,9 +25,7 @@ router.get('/',(req,res,next) =>{
             message:'No Book found'
         })}
     })
-    .catch(err =>{
-        console.log(err);
-    });
+    .catch(err => res.status(500).json(err))
 
 });
 
@@ -34,7 +33,7 @@ router.get('/',(req,res,next) =>{
 router.get('/:id',(req,res,next)=>{
     const id = req.params.id;
     Book.findById(id)
-    .select('TITLE AUTHOR EDITOR DESCRIPTION PRICE')
+    .select('TITLE AUTHOR EDITOR DESCRIPTION PRICE STATUS AVAILABILITY_DATE')
     .exec()
     .then(book => {      
         if(book){
@@ -45,27 +44,21 @@ router.get('/:id',(req,res,next)=>{
             });
         }
     })
-    .catch(err => {
-        console.log(err);
-        res.status(500).json({error:err});
-        });
+    .catch(err => res.status(500).json(err))
  });
 
  //Add a New Book 
  router.post('/',(req,res,next) => {    
      
-    const {TITLE,AUTHOR,EDITOR,DESCRIPTION,PRICE}=req.body;  
+    const {TITLE,AUTHOR,EDITOR,DESCRIPTION,PRICE,STATUS,AVAILABILITY_DATE}=req.body;  
     newBook= new Book ({    
-        TITLE,AUTHOR,EDITOR,DESCRIPTION,PRICE
+        TITLE,AUTHOR,EDITOR,DESCRIPTION,PRICE,STATUS,AVAILABILITY_DATE
     });
     newBook.save()
     .then(book => {
         res.status(200).json(book);
     })
-    .catch((err) =>{
-        console.log(err);
-        res.status(500).json({error:err});
-    });
+    .catch(err => res.status(500).json(err))
 });
 
 //Update a Book
@@ -75,11 +68,14 @@ router.put('/:id',(req,res,next) =>{
      //Find a Book by id from DB
       Book.findById(id)
       .then(book => {
+          
         book.TITLE = req.body.TITLE;
         book.AUTHOR = req.body.AUTHOR;
         book.EDITOR = req.body.EDITOR;
         book.DESCRIPTION = req.body.DESCRIPTION;
         book.PRICE = req.body.PRICE;
+        book.STATUS = req.body.STATUS;
+        book.AVAILABILITY_DATE = req.body.AVAILABILITY_DATE;
               
         book.save()
          .then(book => {
@@ -89,9 +85,9 @@ router.put('/:id',(req,res,next) =>{
                   BookUpdated:book
                  }])
          })
-         .catch(err => console.log(err))
+         .catch(err => res.status(500).json(err))
       })
-      .catch(err => console.log(err))
+      .catch(err => res.status(500).json(err))
  
  });
 
@@ -109,8 +105,8 @@ router.put('/:id',(req,res,next) =>{
                 status:'Success',
                 BookDelted:book}])
         })
-        .catch(err => console.log(err))
+        .catch(err => res.status(500).json(err))
      })
-     .catch(err => console.log(err))
+     .catch(err => res.status(500).json(err))
     });
  module.exports=router;

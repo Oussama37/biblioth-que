@@ -1,8 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const BodyParser = require('body-parser');
-//const cors = require('cors');
-//const path = require('path');
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -24,7 +24,7 @@ mongoose.connect(db,{
 const port = process.env.PORT || 8080;
 
 //Initialize cors Middleware for All Req
-//app.use(cors());
+app.use(cors());
 
 //Intialize BodyParser Middleware
 app.use(BodyParser.json());
@@ -32,12 +32,12 @@ app.use(BodyParser.json());
 //Import Routes
 const UsersRoutes=require('./Router/apis/users');  
 const BooksRoutes=require('./Router/apis/books');  
-const AuthRoutes=require('./Router/apis/auth');  
+
 
 //Handle requests
 app.use('/users',UsersRoutes);
 app.use('/books',BooksRoutes);
-app.use('/auth',AuthRoutes);
+
 
 app.listen(port,()=>{
     console.log('server Started on Port ',port)

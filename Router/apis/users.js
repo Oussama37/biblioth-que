@@ -1,22 +1,23 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../../models/Users');
 
 //Get The Users List
 router.get('/',(req,res,next) =>{
     User.find()
-   .select('FirstName LastName')
+   .select('FirstName LastName Email')
     .exec()
     .then(users =>{      
         if(users.length>=0){
            res.status(200).json({
-               N_Users:users.length,
                Users:users.map(user =>{
                    return{
                     FirstName:user.FirstName,
                    LastName:user.LastName,                   
-                    MoreInfos:'http://localhost:8080/users/'+user._id
-                       
+                   Email:user.Email,
                    }
                })
            }); 
@@ -25,9 +26,7 @@ router.get('/',(req,res,next) =>{
             message:'No user found'
         })}
     })
-    .catch(err =>{
-        console.log(err);
-    });
+    .catch(err => res.status(500).json(err));
 
 });
 
@@ -46,30 +45,89 @@ router.get('/:id',(req,res,next)=>{
             });
         }
     })
-    .catch(err => {
-        console.log(err);
-        res.status(500).json({error:err});
-        });
- });
+    .catch(err => res.status(500).json(err));
 
- //Create a New User (registe)
- router.post('/',(req,res,next) => {   
-    
-     const {FirstName,LastName,Email,Password}=req.body;  
-    newUser= new User ({    
-        FirstName,LastName,Email,Password
-    });
-     newUser.save()
+ });
+  //Create a New User (registe)
+router.post('/',(req,res,next) => {
+    User.find({Email:req.body.Email })
+    .exec()
     .then(user => {
-        res.status(200).json(user);
+        if(user.length >= 1){
+            return res.status(409).json({
+                message:'Mail Exists'
+            });
+        }else{
+            bcrypt.hash(req.body.Password, 10,(err,hash)=>{
+                if(err){
+                    return res.status(500).json({
+                        error:err
+                    });
+                }else{
+                    const NewUser = new User({
+                        FirstName : req.body.FirstName,
+                        LastName : req.body.LastName,
+                        Email : req.body.Email,
+                        Password : hash
+                    });
+                    NewUser.save()
+                    .then(result => {
+                        console.log(result);
+                        res.status(201).json({
+                            message:'User Created'
+                        });
+                    })
+                    .catch(err => res.status(500).json(err))
+                }
+            });
+        }
     })
-    .catch((err) =>{
-        console.log(err);
-        res.status(500).json({error:err});
-    });
-        
+     
     
 });
+
+//Login
+router.post('/login',(req,res,next)=>{
+    User.find({Email:req.body.Email })
+    .exec()
+    .then(user => {
+        if(user.length < 1 ){
+            return res.status(401).json({
+                message:'Authentication Failed '
+            });
+        }
+        bcrypt.compare(req.body.Password,user[0].Password,(err,result)=>{
+             if(err){
+                return res.status(401).json({
+                    message:'Authentication Failed '
+             });
+            }
+            if(result){
+                const token = jwt.sign({
+                  Email:user[0].Email,  
+                  Id:user[0]._id,  
+                },
+                process.env.JWT_KEY,{
+                    expiresIn:"1h"
+                }
+                );
+                return res.status(200).json({
+                    message:'Authentication Successful',
+                    token:token
+                })
+            }
+            res.status(401).json({
+                message:'Authentication Failed'
+            });
+        })
+    })
+    .catch(err => {
+        res.status(500).json({
+            error:err
+        })
+    })    
+})
+ 
 
 //Update an User
 router.put('/:id',(req,res,next) =>{
@@ -91,9 +149,11 @@ router.put('/:id',(req,res,next) =>{
                   userUpdated:user
                  }])
          })
-         .catch(err => console.log(err))
+         .catch(err => res.status(500).json(err));
+
       })
-      .catch(err => console.log(err))
+      .catch(err => res.status(500).json(err));
+
  
  });
 
@@ -110,9 +170,9 @@ router.delete('/:id',(req,res,next) => {
                 status:'Success',
                 UserDelted:user}])
         })
-        .catch(err => console.log(err))
+        .catch(err => res.status(500).json(err));
     })
-     .catch(err => console.log(err))
+    .catch(err => res.status(500).json(err));
 });
 
  module.exports=router;
