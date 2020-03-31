@@ -8,13 +8,13 @@ const User = require('../../models/Users');
 //Get The Users List
 router.get('/',(req,res,next) =>{
     User.find()
-   .select('FirstName LastName Email')
     .exec()
     .then(users =>{      
         if(users.length>=0){
            res.status(200).json({
                Users:users.map(user =>{
                    return{
+                       Id:user._id,
                     FirstName:user.FirstName,
                    LastName:user.LastName,                   
                    Email:user.Email,
@@ -34,7 +34,6 @@ router.get('/',(req,res,next) =>{
 router.get('/:id',(req,res,next)=>{
     const id = req.params.id;
     User.findById(id)
-    .select('FirstName LastName Email Password')
     .exec()
     .then(user => {      
         if(user){
@@ -136,6 +135,7 @@ router.put('/:id',(req,res,next) =>{
      //Find a User by id from DB
       User.findById(id)
       .then(user => {
+        user._id = req.body._id;
         user.FirstName = req.body.FirstName;
         user.LastName = req.body.LastName;
         user.Email = req.body.Email;

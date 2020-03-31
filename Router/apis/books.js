@@ -4,19 +4,20 @@ const Book = require('../../models/Books');
 
 //Get The Books List
 router.get('/',(req,res,next) =>{
-    Book.find()
-   .select('TITLE')
+    Book.find()  
     .exec()
     .then(books =>{      
         if(books.length>=0){
            res.status(200).json({
-               N_Books:books.length,
                Books:books.map(book =>{
                    return{
+                    Id:book._id, 
                     Title:book.TITLE, 
-                    Status:book.STATUS,                 
-                    MoreInfos:'http://localhost:8080/books/'+book._id
-                       
+                    AUTHOR:book.AUTHOR, 
+                    EDITOR:book.EDITOR, 
+                    DESCRIPTION:book.DESCRIPTION, 
+                    PRICE:book.PRICE, 
+                    Status:book.STATUS,                                        
                    }
                })
            }); 
@@ -33,7 +34,6 @@ router.get('/',(req,res,next) =>{
 router.get('/:id',(req,res,next)=>{
     const id = req.params.id;
     Book.findById(id)
-    .select('TITLE AUTHOR EDITOR DESCRIPTION PRICE STATUS AVAILABILITY_DATE')
     .exec()
     .then(book => {      
         if(book){
@@ -69,6 +69,7 @@ router.put('/:id',(req,res,next) =>{
       Book.findById(id)
       .then(book => {
           
+        book._id = req.body._id;
         book.TITLE = req.body.TITLE;
         book.AUTHOR = req.body.AUTHOR;
         book.EDITOR = req.body.EDITOR;
